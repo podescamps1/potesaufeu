@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Potes au feu 🔥</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#D85A30">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Potes au 🔥">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Le carnet de recettes du frigo de Potes au Feu">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -970,7 +979,7 @@ const ADMIN_EMAIL = "po.descamps@gmail.com";
 // ============================================================
 // MODIFIER LE TEXTE DU BANDEAU ICI (mettre "" pour le cacher)
 // ============================================================
-const ANNOUNCEMENT = "⚠️ <strong>Coucou Chauvin ! Info :</strong> Problème temporaire avec les inscriptions via compte Google — merci d'utiliser votre adresse e-mail classique. Le personnel ultra qualifié est mobilisé pour tout résoudre. 🔧";
+const ANNOUNCEMENT = "⚠️ <strong>Info :</strong> Problème temporaire avec les inscriptions via compte Google — merci d'utiliser votre adresse e-mail classique. Le personnel ultra qualifié est mobilisé pour tout résoudre. 🔧";
 // ============================================================
 
 // Init announcement banner
@@ -2330,6 +2339,16 @@ document.addEventListener("click", e => {
 ["add-modal","detail-modal","login-modal","user-auth-modal","idea-modal","courses-modal","weekly-modal","conseil-modal","conseil-detail-modal","propose-modal","refuse-modal","import-modal"].forEach(id => {
   document.getElementById(id).addEventListener("click", e => { if(e.target===document.getElementById(id)) document.getElementById(id).classList.remove("open"); });
 });
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/potesaufeu/sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
 </script>
 </body>
 </html>
