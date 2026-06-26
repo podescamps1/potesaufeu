@@ -321,6 +321,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 .provider-email { background: var(--bg); color: var(--text-2); border: 0.5px solid var(--border); }
 .user-count-badge { background: var(--accent-light); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
 
+/* NEW RECIPE BADGE */
+.new-badge { position: absolute; top: 6px; left: 6px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; z-index: 4; letter-spacing: 0.3px; }
+.nav-new-count { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 20px; margin-left: 4px; vertical-align: middle; }
+.tab-new-count { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 20px; margin-left: 4px; }
+
 @media (max-width: 600px) {
   nav { padding: 0 1rem; }
   main { padding: 1.25rem 1rem; }
@@ -334,7 +339,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 <body>
 
 <nav>
-  <div class="nav-logo">Potes au 🔥</div>
+  <div class="nav-logo">Potes au 🔥<span id="nav-new-count" class="nav-new-count" style="display:none;"></span></div>
   <div class="nav-actions">
     <a href="https://www.instagram.com/potesaufeu__/" target="_blank" class="btn btn-icon" title="Instagram @potesaufeu__" style="text-decoration:none;">📸</a>
     <button class="btn btn-sm propose-btn" id="btn-propose" onclick="window.openProposeModal()" title="Proposer une recette">➕ Proposer</button>
@@ -345,8 +350,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 </nav>
 
 <!-- ANNOUNCEMENT BANNER -->
-<div id="announcement-banner" style="background:#FFF3CD;border-bottom:0.5px solid #FFCA28;padding:8px 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:13px;color:#7B5800;">
-  <span>⚠️ <strong>Info :</strong> Problème temporaire avec les inscriptions via compte Google — merci d'utiliser votre adresse e-mail classique. Le personnel ultra qualifié est mobilisé pour tout résoudre. 🔧</span>
+<div id="announcement-banner" style="display:none;background:#FFF3CD;border-bottom:0.5px solid #FFCA28;padding:8px 1.5rem;align-items:center;justify-content:space-between;gap:1rem;font-size:13px;color:#7B5800;">
+  <span id="announcement-text"></span>
   <button onclick="document.getElementById('announcement-banner').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#7B5800;flex-shrink:0;padding:0 4px;">×</button>
 </div>
 
@@ -447,7 +452,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="window.setTab('recettes',this)">Recettes</button>
+    <button class="tab active" onclick="window.setTab('recettes',this)">Recettes <span id="tab-new-count" class="tab-new-count" style="display:none;"></span></button>
     <button class="tab" onclick="window.setTab('favoris',this)" id="tab-favoris" style="display:none;">❤️ Mes favoris</button>
     <button class="tab" onclick="window.setTab('conseils',this)">👨‍🍳 Conseils</button>
     <button class="tab" onclick="window.setTab('faq',this)">❓ FAQ</button>
@@ -957,7 +962,48 @@ const googleProvider = new GoogleAuthProvider();
 
 const ADMIN_EMAIL = "po.descamps@gmail.com";
 
-let recipes = [];
+// ============================================================
+// MODIFIER LE TEXTE DU BANDEAU ICI (mettre "" pour le cacher)
+// ============================================================
+const ANNOUNCEMENT = "⚠️ <strong>Info :</strong> Problème temporaire avec les inscriptions via compte Google — merci d'utiliser votre adresse e-mail classique. Le personnel ultra qualifié est mobilisé pour tout résoudre. 🔧";
+// ============================================================
+
+// Init announcement banner
+const _annBanner = document.getElementById("announcement-banner");
+const _annText = document.getElementById("announcement-text");
+if (ANNOUNCEMENT && _annBanner && _annText) {
+  _annText.innerHTML = ANNOUNCEMENT;
+  _annBanner.style.display = "flex";
+}
+
+// NEW RECIPES TRACKING
+function getLastSeenKey(uid) { return `lastSeen_${uid}`; }
+
+function saveLastSeen(uid) {
+  localStorage.setItem(getLastSeenKey(uid), new Date().toISOString());
+}
+
+function getLastSeen(uid) {
+  return localStorage.getItem(getLastSeenKey(uid)) || null;
+}
+
+function computeNewRecipes(uid) {
+  const lastSeen = getLastSeen(uid);
+  if (!lastSeen) return [];
+  return recipes.filter(r => r.date && r.date > lastSeen.split("T")[0]);
+}
+
+function updateNewBadges(uid) {
+  const newOnes = computeNewRecipes(uid);
+  const count = newOnes.length;
+  const navCount = document.getElementById("nav-new-count");
+  const tabCount = document.getElementById("tab-new-count");
+  if (navCount) { navCount.textContent = count; navCount.style.display = count > 0 ? "inline" : "none"; }
+  if (tabCount) { tabCount.textContent = count; tabCount.style.display = count > 0 ? "inline" : "none"; }
+  return newOnes.map(r => r.id);
+}
+
+
 let currentStar = 0;
 let currentStickers = [];
 let currentPhoto = "";
@@ -990,7 +1036,8 @@ onAuthStateChanged(auth, async user => {
   if (user) {
     await loadFavorites();
     document.getElementById("tab-favoris").style.display = "block";
-    // Track user activity silently
+    // Save last seen date BEFORE loading recipes (so new ones show as new)
+    // We read it first, then update after
     if (!isAdmin) {
       try {
         const userRef = doc(db, "users", user.uid);
@@ -998,13 +1045,11 @@ onAuthStateChanged(auth, async user => {
         const now = new Date().toISOString();
         const loginCount = snap.exists() ? (snap.data().loginCount || 0) + 1 : 1;
         await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email || "",
+          uid: user.uid, email: user.email || "",
           displayName: user.displayName || "",
           provider: user.providerData?.[0]?.providerId || "email",
           firstSeen: snap.exists() ? snap.data().firstSeen : now,
-          lastSeen: now,
-          loginCount
+          lastSeen: now, loginCount
         }, { merge: true });
       } catch(e) {}
     }
@@ -1125,6 +1170,13 @@ async function loadRecettes() {
     recipes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     render();
     renderFavoris();
+    // Compute new recipes badge
+    if (currentUser) {
+      const newIds = updateNewBadges(currentUser.uid);
+      window._newRecipeIds = new Set(newIds);
+      // Save current date as last seen (after computing new)
+      saveLastSeen(currentUser.uid);
+    }
   } catch(e) {
     document.getElementById("grid").innerHTML = '<div class="empty">Impossible de charger les recettes.</div>';
   }
@@ -1624,10 +1676,12 @@ function cardHTML(r) {
   const isFav = userFavorites.has(r.id);
   const showFavBtn = !!currentUser && !selectMode;
   const isSelected = selectedRecipes.has(r.id);
+  const isNew = window._newRecipeIds?.has(r.id);
   const imgHTML = r.photoUrl ? `<img src="${r.photoUrl}" alt="${r.name}" loading="lazy">` : `<div class="card-img-empty">🍳</div>`;
   return `<div class="card${isSelected?" selected":""}" data-id="${r.id}" onclick="${selectMode?`window.toggleRecipeSelect('${r.id}',event)`:`window.openDetail('${r.id}')`}">
     <div class="card-img">
       ${imgHTML}
+      ${isNew ? `<span class="new-badge">Nouveau ✨</span>` : ""}
       <div class="stickers-overlay">${(r.stickers||[]).map(stickerHTML).join("")}</div>
       ${showFavBtn ? `<button class="fav-btn-card" onclick="window.toggleFavorite('${r.id}', event)" title="${isFav?'Retirer':'Ajouter aux favoris'}">${isFav?"❤️":"🤍"}</button>` : ""}
       <div class="card-select-check">${isSelected?"✓":""}</div>
