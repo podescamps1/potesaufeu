@@ -1,0 +1,27 @@
+{
+  "name": "Potes au Feu",
+  "short_name": "Potes au 🔥",
+  "description": "Le carnet de recettes du frigo de Potes au Feu",
+  "start_url": "/potesaufeu/",
+  "scope": "/potesaufeu/",
+  "display": "standalone",
+  "background_color": "#FAFAF7",
+  "theme_color": "#D85A30",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "lifestyle"],
+  "lang": "fr"
+}
